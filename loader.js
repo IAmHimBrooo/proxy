@@ -6,8 +6,13 @@ async function getGamePassesWithDelay(gameIds) {
 
     for (const game of gameIds) {
         try {
+<<<<<<< HEAD
             await new Promise(resolve => setTimeout(resolve, 500));
             var passes = await noblox.getGamePasses(game.id, 100)
+=======
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            var passes = await noblox.getGamePasses(game.id)
+>>>>>>> b5d1436b6844d78f9c77ce35d96198eddd37221d
             gamepassIds = [...gamepassIds, ...passes];
 
         } catch (error) {
