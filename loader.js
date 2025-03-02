@@ -6,8 +6,8 @@ async function getGamePassesWithDelay(gameIds) {
 
     for (const game of gameIds) {
         try {
-            await new Promise(resolve => setTimeout(resolve, 50));
-            var passes = await noblox.getGamePasses(game.id)
+            await new Promise(resolve => setTimeout(resolve, 500));
+            var passes = await noblox.getGamePasses(game.id, 100)
             gamepassIds = [...gamepassIds, ...passes];
 
         } catch (error) {
@@ -19,17 +19,27 @@ async function getGamePassesWithDelay(gameIds) {
 }
 
 async function getUserCreatedClothing(userId, assetTypeId) {
+    let results = [];
+    let cursor = "";
     try {
-        const url = `https://catalog.roblox.com/v1/search/items/details?Category=Clothing&CreatorTargetId=${userId}&CreatorType=User&Limit=30&SortType=RecentlyUpdated&AssetType=${assetTypeId}`;
-        
-        const response = await axios.get(url);
-        return response.data.data;
+        let done = false;
+        while (!done) {
+            const url = `https://catalog.roblox.com/v1/search/items/details?Category=Clothing&CreatorTargetId=${userId}&CreatorType=User&Limit=30&SortType=RecentlyUpdated&AssetType=${assetTypeId}&cursor=${cursor}`;
+            
+            const response = await axios.get(url);
+            results = results.concat(response.data.data);
+            
+            if (response.data.nextPageCursor) {
+                cursor = response.data.nextPageCursor; // Move to the next page
+            } else {
+                done = true; // No more pages
+            }
+        }
     } catch (error) {
         console.error(`❌ Failed to fetch user-created clothing:`, error.message);
-        return [];
     }
+    return results;
 }
-
 module.exports.loadClothing = async (userId) => {
     const tshirts = await getUserCreatedClothing(userId, 2); 
     const shirts = await getUserCreatedClothing(userId, 11); 
@@ -38,19 +48,31 @@ module.exports.loadClothing = async (userId) => {
 }
 
 module.exports.loadGamepasses = async (userId) => {
+    let gameIds = [];
+    let cursor = "";
     try {
-        const response = await axios.get(
-            `https://games.roblox.com/v2/users/${userId}/games?accessFilter=Public&limit=50`
-        );
+        let done = false;
+        while (!done) {
+            const url = `https://games.roblox.com/v2/users/${userId}/games?accessFilter=Public&limit=50&cursor=${cursor}`;
+            
+            const response = await axios.get(url);
+            gameIds = gameIds.concat(response.data.data);
+            
+            if (response.data.nextPageCursor) {
+                cursor = response.data.nextPageCursor; 
+            } else {
+                done = true; 
+            }
+        }
 
-        const gameIds = response.data.data;
         if (!gameIds.length) {
             console.log("No games found.");
-            return;
+            return [];
         }
-        const gamepassData = await getGamePassesWithDelay(gameIds);
-        return gamepassData
+        
+        return await getGamePassesWithDelay(gameIds);
     } catch (error) {
         console.error("❌ Failed to fetch game list:", error.message);
+        return [];
     }
 }

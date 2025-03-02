@@ -18,7 +18,7 @@ app.get("/clothing", async (req, res) => {
     const userId = req.query.userId
     if (!userId) return res.send({ "message": "Invalid Id!" });
     const clothing = await loader.loadClothing(userId)
-    res.send({ "message": "success", "data": clothing})
+    res.send({ "message": "success", "data": clothing })
 })
 
 app.listen(PORT, () => {
